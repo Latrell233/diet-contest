@@ -23,7 +23,7 @@ export default function NavBar({ currentWeek, totalWeeks, onWeekChange }: NavBar
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="flex items-center gap-2 text-neon-green font-black text-lg tracking-tight hover:opacity-80 transition-opacity"
         >
-          🏆 散兵团减肥大赛
+          🏆 北交散兵团减肥大赛
         </button>
 
         <div className="flex items-center gap-1">
