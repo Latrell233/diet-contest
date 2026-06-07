@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+.superpowers/
+
+# 含真名的源文件 — 严禁提交
+basicinfo.md
+data/**/*.xlsx
+config/
+
+# Excel 真名查找表
+*.xlsx
+prompt.txt
