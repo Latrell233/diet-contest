@@ -33,17 +33,34 @@ export default function TrendChart({ weekData }: TrendChartProps) {
       return `${d.getMonth() + 1}/${d.getDate()}`
     }) ?? []
 
+  // 提前计算每人有效数据的起止范围，首尾缺卡不绘制
+  const uidRange = new Map<string, { first: number; last: number }>()
+  weekData.participants.forEach(wp => {
+    const validIndices = wp.dailyRecords
+      .map((r, i) => (r.weight !== null ? i : -1))
+      .filter(i => i >= 0)
+    if (validIndices.length > 0) {
+      uidRange.set(wp.uid, {
+        first: validIndices[0],
+        last: validIndices[validIndices.length - 1],
+      })
+    }
+  })
+
   const chartData = days.map((day, i) => {
     const point: Record<string, number | string> = { day }
     weekData.participants.forEach(wp => {
       const profile = participantMap.get(wp.uid)
       if (!profile) return
+      const range = uidRange.get(wp.uid)
+      if (!range || i < range.first || i > range.last) return // 首尾缺卡留空
       const weight = wp.dailyRecords[i]?.weight
       if (weight !== null && weight !== undefined) {
         point[wp.uid] = parseFloat(
           (((weight - profile.initialWeight) / profile.initialWeight) * 100).toFixed(1),
         )
       }
+      // 中间缺卡：不赋值（undefined），虚线层 connectNulls=true 会连接
     })
     return point
   })
