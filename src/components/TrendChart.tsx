@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   LineChart,
   Line,
@@ -113,18 +114,36 @@ export default function TrendChart({ weekData }: TrendChartProps) {
                 )
               }}
             />
-            {weekData.participants.map((wp, i) => (
-              <Line
-                key={wp.uid}
-                type="monotone"
-                dataKey={wp.uid}
-                stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                strokeWidth={2.5}
-                dot={{ r: 4, strokeWidth: 0 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: '#0a0a0f' }}
-                connectNulls={false}
-              />
-            ))}
+            {weekData.participants.map((wp, i) => {
+              const color = LINE_COLORS[i % LINE_COLORS.length]
+              return (
+                <React.Fragment key={wp.uid}>
+                  {/* 虚线层：连接所有点（包括null），显示趋势走向 */}
+                  <Line
+                    type="monotone"
+                    dataKey={wp.uid}
+                    stroke={color}
+                    strokeWidth={1.5}
+                    strokeDasharray="6 4"
+                    strokeOpacity={0.35}
+                    dot={false}
+                    activeDot={false}
+                    connectNulls={true}
+                    legendType="none"
+                  />
+                  {/* 实线层：仅在有数据的段落绘制 */}
+                  <Line
+                    type="monotone"
+                    dataKey={wp.uid}
+                    stroke={color}
+                    strokeWidth={2.5}
+                    dot={{ r: 4, strokeWidth: 0 }}
+                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#0a0a0f' }}
+                    connectNulls={false}
+                  />
+                </React.Fragment>
+              )
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>
