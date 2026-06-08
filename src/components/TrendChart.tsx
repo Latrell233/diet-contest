@@ -48,19 +48,22 @@ export default function TrendChart({ weekData }: TrendChartProps) {
   })
 
   const chartData = days.map((day, i) => {
-    const point: Record<string, number | string> = { day }
+    const point: Record<string, number | string | null> = { day }
     weekData.participants.forEach(wp => {
       const profile = participantMap.get(wp.uid)
       if (!profile) return
       const range = uidRange.get(wp.uid)
-      if (!range || i < range.first || i > range.last) return // 首尾缺卡留空
+      // 首尾缺卡：不写入 key，Recharts 不会在此区间绘制任何东西
+      if (!range || i < range.first || i > range.last) return
       const weight = wp.dailyRecords[i]?.weight
       if (weight !== null && weight !== undefined) {
         point[wp.uid] = parseFloat(
           (((weight - profile.initialWeight) / profile.initialWeight) * 100).toFixed(1),
         )
+      } else {
+        // 中间缺卡：显式设为 null，connectNulls=true 会以直线连接
+        point[wp.uid] = null
       }
-      // 中间缺卡：不赋值（undefined），虚线层 connectNulls=true 会连接
     })
     return point
   })
