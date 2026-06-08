@@ -56,17 +56,16 @@ export default function NavBar({ currentWeek, totalWeeks, onWeekChange }: NavBar
         </div>
 
         {/* 第二行：导航链接 */}
-        <div className="flex items-center justify-center gap-1 pb-2">
+        <div className="flex items-center justify-center gap-2 md:gap-3 pb-2">
           {NAV_ITEMS.map(item => (
             <button
               key={item.id}
               onClick={() => handleScroll(item.id)}
-              className="px-2 md:px-3 py-1.5 text-xs md:text-sm text-gray-400
+              className="px-3 py-1.5 text-xs md:text-sm text-gray-400
                          hover:text-neon-green hover:bg-neon-green/5 rounded-lg
                          transition-all duration-200"
             >
-              <span className="md:hidden">{item.icon}</span>
-              <span className="hidden md:inline">{item.label}</span>
+              {item.label}
             </button>
           ))}
         </div>

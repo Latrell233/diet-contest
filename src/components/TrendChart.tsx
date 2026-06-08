@@ -127,34 +127,34 @@ export default function TrendChart({ trendWeeks }: TrendChartProps) {
       <h2 className="text-lg font-black text-neon-green mb-4 tracking-tight">
         📈 减重趋势
       </h2>
-      <div className="bg-[#111118] rounded-xl border border-[#1e1e2a] p-4 md:p-6">
+      <div className="bg-[#111118] rounded-xl border border-[#1e1e2a] pl-2 pr-3 py-4 md:p-6">
         <ResponsiveContainer width="100%" height={280}>
           <LineChart
             data={chartData}
-            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+            margin={{ top: 5, right: 4, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2a" />
             <XAxis
               dataKey="day"
-              tick={{ fill: '#666', fontSize: 11 }}
+              tick={{ fill: '#666', fontSize: 10 }}
               axisLine={{ stroke: '#1e1e2a' }}
               tickLine={false}
-              interval={Math.max(0, Math.floor(days.length / 8) - 1)}
+              interval={Math.max(0, Math.floor(days.length / 7) - 1)}
             />
             <YAxis
-              tick={{ fill: '#666', fontSize: 11 }}
+              tick={{ fill: '#666', fontSize: 10 }}
               axisLine={{ stroke: '#1e1e2a' }}
               tickLine={false}
               tickFormatter={v => `${v > 0 ? '+' : ''}${v}%`}
-              width={45}
+              width={38}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ paddingTop: 12 }}
+              wrapperStyle={{ paddingTop: 8, fontSize: 11 }}
               formatter={(value: string) => {
                 const profile = participantMap.get(value)
                 return (
-                  <span className="text-gray-400 text-xs">
+                  <span className="text-gray-400 text-[10px] md:text-xs">
                     {profile?.nickname ?? value}
                   </span>
                 )
@@ -175,9 +175,9 @@ export default function TrendChart({ trendWeeks }: TrendChartProps) {
                 type="monotone"
                 dataKey={uid}
                 stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                strokeWidth={2.5}
-                dot={{ r: 3, strokeWidth: 0 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: '#0a0a0f' }}
+                strokeWidth={2}
+                dot={{ r: 2, strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: '#0a0a0f' }}
                 connectNulls={false}
               />
             ))}
