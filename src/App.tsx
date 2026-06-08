@@ -42,7 +42,6 @@ function App() {
           champion={champion}
           bingeKing={bingeKing}
           disciplined={disciplined}
-          totalDays={trendWeeks.length * 7}
         />
 
         <Podium leaderboard={leaderboard} />

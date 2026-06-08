@@ -6,7 +6,7 @@ interface LeaderboardTableProps {
   totalDays: number
 }
 
-type SortKey = 'weightLoss' | 'weightLossPercent' | 'attendance' | 'bingeCount'
+type SortKey = 'weightLoss' | 'weightLossPercent' | 'attendance' | 'bingeCount' | 'exerciseCount'
 
 function MobileCard({
   entry,
@@ -85,6 +85,20 @@ function MobileCard({
           </span>
         </div>
         <div className="text-gray-500 text-right">
+          运动{' '}
+          <span
+            className={`font-mono ${
+              entry.exerciseCount >= totalDays * 0.7
+                ? 'text-neon-green font-bold'
+                : entry.exerciseCount > 0
+                  ? 'text-neon-green/60'
+                  : 'text-gray-600'
+            }`}
+          >
+            {entry.exerciseCount}🏃
+          </span>
+        </div>
+        <div className="text-gray-500">
           爽吃{' '}
           <span
             className={`font-mono ${
@@ -114,6 +128,7 @@ export default function LeaderboardTable({
     if (sortKey === 'weightLossPercent')
       return b.weightLossPercent - a.weightLossPercent
     if (sortKey === 'bingeCount') return b.bingeCount - a.bingeCount
+    if (sortKey === 'exerciseCount') return b.exerciseCount - a.exerciseCount
     return b.attendance - a.attendance
   })
 
@@ -145,6 +160,7 @@ export default function LeaderboardTable({
               <SortHeader field="weightLossPercent" label="减重%" />
               <SortHeader field="attendance" label="出勤" />
               <SortHeader field="bingeCount" label="爽吃数 🍗" />
+              <SortHeader field="exerciseCount" label="运动 🏃" />
             </tr>
           </thead>
           <tbody>
@@ -237,6 +253,19 @@ export default function LeaderboardTable({
                       }
                     >
                       {entry.bingeCount}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-xs">
+                    <span
+                      className={
+                        entry.exerciseCount >= totalDays * 0.7
+                          ? 'text-neon-green font-bold'
+                          : entry.exerciseCount > 0
+                            ? 'text-neon-green/60'
+                            : 'text-gray-600'
+                      }
+                    >
+                      {entry.exerciseCount}
                     </span>
                   </td>
                 </tr>

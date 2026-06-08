@@ -4,7 +4,6 @@ interface HeroStatsProps {
   champion: LeaderboardEntry | null
   bingeKing: LeaderboardEntry | null
   disciplined: LeaderboardEntry | null
-  totalDays: number
 }
 
 function StatCard({
@@ -12,13 +11,11 @@ function StatCard({
   label,
   entry,
   accent,
-  totalDays,
 }: {
   emoji: string
   label: string
   entry: LeaderboardEntry | null
   accent: 'gold' | 'orange' | 'green'
-  totalDays: number
 }) {
   if (!entry) return null
 
@@ -61,7 +58,7 @@ function StatCard({
           )}
           {accent === 'green' && (
             <div className="text-sm text-neon-green font-mono">
-              💪 出勤 {entry.attendance}/{totalDays}
+              🏃 运动 {entry.exerciseCount} 天
               {entry.weightLoss > 0 && ` · -${entry.weightLoss.toFixed(1)}kg`}
             </div>
           )}
@@ -72,13 +69,13 @@ function StatCard({
   )
 }
 
-export default function HeroStats({ champion, bingeKing, disciplined, totalDays }: HeroStatsProps) {
+export default function HeroStats({ champion, bingeKing, disciplined }: HeroStatsProps) {
   return (
     <section id="hero" className="max-w-6xl mx-auto px-4 pt-6 pb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard emoji="👑" label="🏆 金腰带" entry={champion} accent="gold" totalDays={totalDays} />
-        <StatCard emoji="🍗" label="🍗 爽吃之王" entry={bingeKing} accent="orange" totalDays={totalDays} />
-        <StatCard emoji="🔥" label="🔥 自律之王" entry={disciplined} accent="green" totalDays={totalDays} />
+        <StatCard emoji="👑" label="🏆 金腰带" entry={champion} accent="gold"  />
+        <StatCard emoji="🍗" label="🍗 爽吃之王" entry={bingeKing} accent="orange"  />
+        <StatCard emoji="🔥" label="🔥 自律之王" entry={disciplined} accent="green"  />
       </div>
     </section>
   )

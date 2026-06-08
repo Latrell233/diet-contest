@@ -28,12 +28,14 @@ export function useWeekData(week: number) {
     // 累计数据：合并 week 1 → week N 的所有打卡记录
     const cumulativeRecords = new Map<string, { weight: number; date: string }[]>()
     const bingeCounts = new Map<string, number>()
+    const exerciseCounts = new Map<string, number>()
 
     for (let i = 0; i <= weekIndex; i++) {
       allWeeks[i].participants.forEach(wp => {
         if (!cumulativeRecords.has(wp.uid)) {
           cumulativeRecords.set(wp.uid, [])
           bingeCounts.set(wp.uid, 0)
+          exerciseCounts.set(wp.uid, 0)
         }
         wp.dailyRecords.forEach(r => {
           if (r.weight !== null) {
@@ -44,6 +46,10 @@ export function useWeekData(week: number) {
           }
           if (r.diet === '爽吃') {
             bingeCounts.set(wp.uid, (bingeCounts.get(wp.uid) ?? 0) + 1)
+          }
+          // 运动：除了"未运动"以外都算
+          if (r.sport && r.sport !== '未运动') {
+            exerciseCounts.set(wp.uid, (exerciseCounts.get(wp.uid) ?? 0) + 1)
           }
         })
       })
@@ -81,6 +87,7 @@ export function useWeekData(week: number) {
           Math.round((weightLoss / profile.initialWeight) * 10000) / 100,
         attendance: records.length,
         bingeCount: bingeCounts.get(profile.uid) ?? 0,
+        exerciseCount: exerciseCounts.get(profile.uid) ?? 0,
         trend,
       }
     })
@@ -97,10 +104,11 @@ export function useWeekData(week: number) {
             .sort((a, b) => b.weightLoss - a.weightLoss)[0] ?? null
         : null
 
-    const maxAttendance = Math.max(...entries.map(e => e.attendance), 0)
+    // 自律之王：按运动天数排序，平局按减重
+    const maxExercise = Math.max(...entries.map(e => e.exerciseCount), 0)
     const disciplined =
       entries
-        .filter(e => e.attendance === maxAttendance)
+        .filter(e => e.exerciseCount === maxExercise)
         .sort((a, b) => b.weightLoss - a.weightLoss)[0] ?? null
 
     // 趋势图需要的数据：所有周到当前
