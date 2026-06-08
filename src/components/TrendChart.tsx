@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   LineChart,
   Line,
@@ -33,37 +32,18 @@ export default function TrendChart({ weekData }: TrendChartProps) {
       return `${d.getMonth() + 1}/${d.getDate()}`
     }) ?? []
 
-  // 提前计算每人有效数据的起止范围，首尾缺卡不绘制
-  const uidRange = new Map<string, { first: number; last: number }>()
-  weekData.participants.forEach(wp => {
-    const validIndices = wp.dailyRecords
-      .map((r, i) => (r.weight !== null ? i : -1))
-      .filter(i => i >= 0)
-    if (validIndices.length > 0) {
-      uidRange.set(wp.uid, {
-        first: validIndices[0],
-        last: validIndices[validIndices.length - 1],
-      })
-    }
-  })
-
   const chartData = days.map((day, i) => {
-    const point: Record<string, number | string | null> = { day }
+    const point: Record<string, number | string> = { day }
     weekData.participants.forEach(wp => {
       const profile = participantMap.get(wp.uid)
       if (!profile) return
-      const range = uidRange.get(wp.uid)
-      // 首尾缺卡：不写入 key，Recharts 不会在此区间绘制任何东西
-      if (!range || i < range.first || i > range.last) return
       const weight = wp.dailyRecords[i]?.weight
       if (weight !== null && weight !== undefined) {
         point[wp.uid] = parseFloat(
           (((weight - profile.initialWeight) / profile.initialWeight) * 100).toFixed(1),
         )
-      } else {
-        // 中间缺卡：显式设为 null，connectNulls=true 会以直线连接
-        point[wp.uid] = null
       }
+      // 缺卡日不写 key → Recharts 自动断开
     })
     return point
   })
@@ -134,36 +114,18 @@ export default function TrendChart({ weekData }: TrendChartProps) {
                 )
               }}
             />
-            {weekData.participants.map((wp, i) => {
-              const color = LINE_COLORS[i % LINE_COLORS.length]
-              return (
-                <React.Fragment key={wp.uid}>
-                  {/* 虚线层：连接所有点（包括null），显示趋势走向 */}
-                  <Line
-                    type="monotone"
-                    dataKey={wp.uid}
-                    stroke={color}
-                    strokeWidth={1.5}
-                    strokeDasharray="6 4"
-                    strokeOpacity={0.35}
-                    dot={false}
-                    activeDot={false}
-                    connectNulls={true}
-                    legendType="none"
-                  />
-                  {/* 实线层：仅在有数据的段落绘制 */}
-                  <Line
-                    type="monotone"
-                    dataKey={wp.uid}
-                    stroke={color}
-                    strokeWidth={2.5}
-                    dot={{ r: 4, strokeWidth: 0 }}
-                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#0a0a0f' }}
-                    connectNulls={false}
-                  />
-                </React.Fragment>
-              )
-            })}
+            {weekData.participants.map((wp, i) => (
+              <Line
+                key={wp.uid}
+                type="monotone"
+                dataKey={wp.uid}
+                stroke={LINE_COLORS[i % LINE_COLORS.length]}
+                strokeWidth={2.5}
+                dot={{ r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: '#0a0a0f' }}
+                connectNulls={false}
+              />
+            ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
