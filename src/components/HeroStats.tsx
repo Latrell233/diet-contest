@@ -2,8 +2,9 @@ import type { LeaderboardEntry } from '../types'
 
 interface HeroStatsProps {
   champion: LeaderboardEntry | null
-  slacker: LeaderboardEntry | null
+  bingeKing: LeaderboardEntry | null
   disciplined: LeaderboardEntry | null
+  totalDays: number
 }
 
 function StatCard({
@@ -11,23 +12,25 @@ function StatCard({
   label,
   entry,
   accent,
+  totalDays,
 }: {
   emoji: string
   label: string
   entry: LeaderboardEntry | null
-  accent: 'gold' | 'red' | 'green'
+  accent: 'gold' | 'orange' | 'green'
+  totalDays: number
 }) {
   if (!entry) return null
 
   const accentBg = {
     gold: 'border-neon-gold/30 bg-[radial-gradient(ellipse_at_top,rgba(255,215,0,0.08),transparent)]',
-    red: 'border-red-500/20 bg-[radial-gradient(ellipse_at_top,rgba(239,68,68,0.06),transparent)]',
+    orange: 'border-orange-500/20 bg-[radial-gradient(ellipse_at_top,rgba(249,115,22,0.06),transparent)]',
     green: 'border-neon-green/30 bg-[radial-gradient(ellipse_at_top,rgba(0,255,136,0.06),transparent)]',
   }
 
   const accentText = {
     gold: 'text-neon-gold',
-    red: 'text-red-400',
+    orange: 'text-orange-400',
     green: 'text-neon-green',
   }
 
@@ -51,14 +54,14 @@ function StatCard({
                 : `${entry.weightLoss.toFixed(1)}kg`}
             </div>
           )}
-          {accent === 'red' && (
-            <div className="text-sm text-red-400 font-mono">
-              😴 缺卡 {7 - entry.attendance} 天
+          {accent === 'orange' && (
+            <div className="text-sm text-orange-400 font-mono">
+              🍗 爽吃 {entry.bingeCount} 天
             </div>
           )}
           {accent === 'green' && (
             <div className="text-sm text-neon-green font-mono">
-              💪 全勤 {entry.attendance}/7
+              💪 出勤 {entry.attendance}/{totalDays}
               {entry.weightLoss > 0 && ` · -${entry.weightLoss.toFixed(1)}kg`}
             </div>
           )}
@@ -69,13 +72,13 @@ function StatCard({
   )
 }
 
-export default function HeroStats({ champion, slacker, disciplined }: HeroStatsProps) {
+export default function HeroStats({ champion, bingeKing, disciplined, totalDays }: HeroStatsProps) {
   return (
     <section id="hero" className="max-w-6xl mx-auto px-4 pt-6 pb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard emoji="👑" label="🏆 本周金腰带" entry={champion} accent="gold" />
-        <StatCard emoji="🕊️" label="🕊️ 本周鸽王" entry={slacker} accent="red" />
-        <StatCard emoji="🔥" label="🔥 自律之王" entry={disciplined} accent="green" />
+        <StatCard emoji="👑" label="🏆 金腰带" entry={champion} accent="gold" totalDays={totalDays} />
+        <StatCard emoji="🍗" label="🍗 爽吃之王" entry={bingeKing} accent="orange" totalDays={totalDays} />
+        <StatCard emoji="🔥" label="🔥 自律之王" entry={disciplined} accent="green" totalDays={totalDays} />
       </div>
     </section>
   )

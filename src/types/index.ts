@@ -53,5 +53,6 @@ export interface LeaderboardEntry {
   weightLoss: number
   weightLossPercent: number
   attendance: number
+  bingeCount: number
   trend: "down" | "up" | "flat"
 }

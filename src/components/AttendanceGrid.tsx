@@ -47,8 +47,8 @@ export default function AttendanceGrid({ weekData }: AttendanceGridProps) {
         </h2>
         <div className="bg-[#111118] rounded-xl border border-[#1e1e2a] p-4 md:p-6 overflow-x-auto">
           {/* 表头 */}
-          <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-1.5 min-w-[600px]">
-            <div className="text-xs text-gray-500 py-1" />
+          <div className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-1.5 min-w-[560px]">
+            <div className="text-xs text-gray-500 py-1 sticky left-0 bg-[#111118] z-10" />
             {WEEKDAYS.map((day, i) => {
               const dateStr = weekData.participants[0]?.dailyRecords[i]?.date
               const [, m, d] = dateStr ? dateStr.split('-') : ['', '', '']
@@ -69,9 +69,9 @@ export default function AttendanceGrid({ weekData }: AttendanceGridProps) {
             return (
               <div
                 key={uid}
-                className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-1.5 min-w-[600px]"
+                className="grid grid-cols-[80px_repeat(7,1fr)] gap-1.5 mb-1.5 min-w-[560px]"
               >
-                <div className="flex items-center gap-2 py-1 pr-2">
+                <div className="flex items-center gap-1.5 py-1 pr-2 sticky left-0 bg-[#111118] z-10">
                   <img
                     src={profile.avatar}
                     alt=""

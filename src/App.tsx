@@ -11,8 +11,15 @@ import { useWeekData, allWeeks } from './hooks/useWeekData'
 function App() {
   const [currentWeek, setCurrentWeek] = useState(allWeeks.length)
 
-  const { weekData, leaderboard, champion, slacker, disciplined, totalWeeks } =
-    useWeekData(currentWeek)
+  const {
+    weekData,
+    trendWeeks,
+    leaderboard,
+    champion,
+    bingeKing,
+    disciplined,
+    totalWeeks,
+  } = useWeekData(currentWeek)
 
   if (!weekData) {
     return (
@@ -33,15 +40,16 @@ function App() {
       <main>
         <HeroStats
           champion={champion}
-          slacker={slacker}
+          bingeKing={bingeKing}
           disciplined={disciplined}
+          totalDays={trendWeeks.length * 7}
         />
 
         <Podium leaderboard={leaderboard} />
 
-        <TrendChart weekData={weekData} />
+        <TrendChart trendWeeks={trendWeeks} />
 
-        <LeaderboardTable leaderboard={leaderboard} />
+        <LeaderboardTable leaderboard={leaderboard} totalDays={trendWeeks.length * 7} />
 
         <AttendanceGrid weekData={weekData} />
 
