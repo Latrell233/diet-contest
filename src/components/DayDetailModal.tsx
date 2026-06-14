@@ -121,6 +121,15 @@ export default function DayDetailModal({
                 </p>
               </div>
             )}
+
+            {record.shoutOut && (
+              <div className="mt-3 bg-neon-gold/[0.04] border-l-2 border-neon-gold/30 rounded-r-lg p-3">
+                <div className="text-xs text-neon-gold/70 mb-1">📢 隔空喊话</div>
+                <p className="text-sm text-gray-300 leading-relaxed italic">
+                  "{record.shoutOut}"
+                </p>
+              </div>
+            )}
           </>
         ) : (
           <div className="text-center py-8 text-gray-500">

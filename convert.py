@@ -1,8 +1,16 @@
 """
 将 Excel 打卡表转换为 history.json。
 
-用法：python convert.py [excel_path] [output_path]
-默认：python convert.py 北交散兵团第一届减肥大赛打卡.xlsx src/data/history.json
+支持两种 Excel 格式：
+  - 旧格式（第1周）：每周 7 天，每天 4 列（体重/运动/饮食/心得）
+  - 新格式（第2周+）：每周 N 天，每天 7 列（体重/运动/饮食/心得/喊话/图片/评分）
+
+用法：
+  # 全新生成（第1周）
+  python convert.py week1.xlsx
+
+  # 追加第2周（从14天 Excel 中提取第8-14天）
+  python convert.py week2data.xlsx --week 2 --start-day 8 --end-day 14 --append src/data/history.json
 """
 
 import json
@@ -44,52 +52,96 @@ def resolve_uid(name, name_mapping):
     return name
 
 
-def parse_excel(excel_path):
-    """解析 Excel，返回 WeekData[]。"""
+def detect_format(ws_content):
+    """
+    检测 Excel 格式。
+    返回 (cols_per_day, total_days) — 每天几列，总共几天。
+    """
+    # 旧格式：row1 每天1个日期 + 5个空 → 6列/天 → 每天4列数据
+    # 新格式：row1 每天1个日期 + 6个空 → 7列/天 → 每天7列数据
+    total_days = 0
+    for col in range(5, ws_content.max_column + 1):
+        val = ws_content.cell(row=1, column=col).value
+        if val and str(val).startswith('2026'):
+            total_days += 1
+
+    # 列数推算：旧格式日期间隔为6（4字段+2空），新格式为7（7字段）
+    # 更简单的检测：看 row2 的 col+4 是什么
+    # 旧格式: col+4 = None (因为是空列或下一组日期)
+    # 新格式: col+4 = "隔空喊话"
+    first_date_col = None
+    for col in range(5, ws_content.max_column + 1):
+        val = ws_content.cell(row=1, column=col).value
+        if val and str(val).startswith('2026'):
+            first_date_col = col
+            break
+
+    if first_date_col is None:
+        return 4, total_days  # fallback to old format
+
+    # 旧格式: 间隔为6（每天6列 = 4数据 + 2空位）
+    # 新格式: 间隔为7（每天7列）
+    next_date_col = None
+    for col in range(first_date_col + 1, ws_content.max_column + 1):
+        val = ws_content.cell(row=1, column=col).value
+        if val and str(val).startswith('2026'):
+            next_date_col = col
+            break
+
+    cols_per_day = (next_date_col - first_date_col) if next_date_col else 7
+    return cols_per_day, total_days
+
+
+def parse_excel_content(excel_path, name_mapping, start_day, end_day, cols_per_day):
+    """
+    解析 汇总-内容 sheet，返回 participants_data。
+    """
     wb = load_workbook(excel_path, data_only=True)
-    name_mapping = load_name_mapping()
+    ws = wb['汇总-内容']
 
-    # ===== 1. 解析"汇总-计数"：提取打卡状态和日期 =====
-    ws_count = wb['汇总-计数']
-    dates = []
-    for col in range(6, 13):
-        dates.append(str(ws_count.cell(row=1, column=col).value or ''))
+    # 计算有效范围
+    total_days = 0
+    date_col_map = {}  # day_idx → (date_str, base_col)
+    for col in range(5, ws.max_column + 1):
+        val = ws.cell(row=1, column=col).value
+        if val and str(val).startswith('2026'):
+            total_days += 1
+            date_col_map[total_days] = (str(val).strip(), col)
 
-    attendance_map = {}
-    for row_idx in range(3, 10):
-        raw_name = str(ws_count.cell(row=row_idx, column=1).value or '')
-        uid = resolve_uid(raw_name, name_mapping)
-        attendance_map[uid] = {}
-        for i, col in enumerate(range(6, 13)):
-            val = str(ws_count.cell(row=row_idx, column=col).value or '')
-            attendance_map[uid][dates[i]] = (val != 'X' and val != 'None' and val != '')
+    print(f"   检测到 {total_days} 天数据，每天 {cols_per_day} 列")
 
-    # ===== 2. 解析"汇总-内容"：提取每日详细信息 =====
-    ws_content = wb['汇总-内容']
-    content_dates = []
-    for i in range(7):
-        date_col = 5 + i * 6
-        content_dates.append(str(ws_content.cell(row=1, column=date_col).value or ''))
+    # 确定提取范围（1-based day index）
+    first_day = start_day if start_day else 1
+    last_day = end_day if end_day else total_days
+    print(f"   提取第 {first_day}-{last_day} 天")
 
     participants_data = []
     for row_idx in range(3, 10):
-        # 打卡人列（B列）
-        raw_name = str(ws_content.cell(row=row_idx, column=2).value or '')
+        raw_name = str(ws.cell(row=row_idx, column=2).value or '')
         uid = resolve_uid(raw_name, name_mapping)
 
         daily_records = []
-        for i in range(7):
-            date_str = content_dates[i]
-            base_col = 5 + i * 6
-            weight_raw = ws_content.cell(row=row_idx, column=base_col).value
+        for day_idx in range(first_day, last_day + 1):
+            date_str, base_col = date_col_map[day_idx]
 
-            sport = str(ws_content.cell(row=row_idx, column=base_col + 1).value or '')
-            diet = str(ws_content.cell(row=row_idx, column=base_col + 2).value or '')
-            note = str(ws_content.cell(row=row_idx, column=base_col + 3).value or '')
+            weight_raw = ws.cell(row=row_idx, column=base_col).value
+            sport = str(ws.cell(row=row_idx, column=base_col + 1).value or '')
+            diet = str(ws.cell(row=row_idx, column=base_col + 2).value or '')
+            note = str(ws.cell(row=row_idx, column=base_col + 3).value or '')
 
-            has_checkin = attendance_map.get(uid, {}).get(date_str, False)
+            # 新格式有 shoutOut（隔空喊话），旧格式没有
+            shout_out = ''
+            if cols_per_day >= 7:
+                shout_out = str(ws.cell(row=row_idx, column=base_col + 4).value or '')
 
-            if has_checkin and weight_raw is not None and str(weight_raw).strip() != '':
+            # 检查是否打卡（有体重数据即为打卡）
+            has_checkin = (
+                weight_raw is not None
+                and str(weight_raw).strip() != ''
+                and str(weight_raw).strip() != 'None'
+            )
+
+            if has_checkin:
                 try:
                     weight = float(weight_raw)
                 except (ValueError, TypeError):
@@ -103,14 +155,20 @@ def parse_excel(excel_path):
                 diet = '未控制'
             if note in ('None', ''):
                 note = ''
+            if shout_out in ('None', ''):
+                shout_out = ''
 
-            daily_records.append({
+            record = {
                 "date": date_str,
                 "weight": weight,
                 "sport": sport,
                 "diet": diet,
                 "note": note,
-            })
+            }
+            if cols_per_day >= 7:
+                record["shoutOut"] = shout_out
+
+            daily_records.append(record)
 
         participants_data.append({
             "uid": uid,
@@ -123,30 +181,107 @@ def parse_excel(excel_path):
                 "comment": "",
                 "nextWeekFlag": "",
                 "prediction": "",
+                "coachGuide": "",
+                "sassQuote": "",
+                "sassReply": "",
             },
         })
 
-    week_data = {
-        "week": 1,
-        "dateRange": f"{dates[0]} - {dates[6]}",
+    return participants_data
+
+
+def build_week_data(excel_path, week_num, start_day, end_day, name_mapping):
+    """构建单周 WeekData。"""
+    wb = load_workbook(excel_path, data_only=True)
+    ws_content = wb['汇总-内容']
+    cols_per_day, total_days = detect_format(ws_content)
+
+    participants_data = parse_excel_content(
+        excel_path, name_mapping, start_day, end_day, cols_per_day
+    )
+
+    # 计算日期范围
+    dates = sorted(set(
+        r['date'] for p in participants_data for r in p['dailyRecords']
+    ))
+    first_date = dates[0] if dates else ''
+    last_date = dates[-1] if dates else ''
+    date_range = f"{first_date} - {last_date}"
+
+    return {
+        "week": week_num,
+        "dateRange": date_range,
         "participants": participants_data,
     }
 
-    return [week_data]
+
+def append_to_history(week_data, history_path):
+    """将一周数据追加到现有 history.json。"""
+    with open(history_path, 'r', encoding='utf-8') as f:
+        history = json.load(f)
+
+    existing_weeks = {w['week'] for w in history}
+    if week_data['week'] in existing_weeks:
+        print(f"  ⚠️  第 {week_data['week']} 周已存在，覆盖旧数据")
+
+    history.append(week_data)
+    # 按周号排序
+    history.sort(key=lambda w: w['week'])
+
+    with open(history_path, 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+    print(f"✅ 已追加第 {week_data['week']} 周到 {history_path}")
+    print(f"   日期: {week_data['dateRange']}")
+    print(f"   共 {len(history)} 周，{len(week_data['participants'])} 名参赛者")
 
 
 def main():
-    excel_path = sys.argv[1] if len(sys.argv) > 1 else '北交散兵团第一届减肥大赛打卡.xlsx'
-    output_path = sys.argv[2] if len(sys.argv) > 2 else 'src/data/history.json'
+    args = sys.argv[1:]
 
-    data = parse_excel(excel_path)
+    excel_path = None
+    output_path = 'src/data/history.json'
+    week_num = 1
+    start_day = None
+    end_day = None
+    append_mode = False
 
-    os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == '--week' and i + 1 < len(args):
+            i += 1
+            week_num = int(args[i])
+        elif arg == '--start-day' and i + 1 < len(args):
+            i += 1
+            start_day = int(args[i])
+        elif arg == '--end-day' and i + 1 < len(args):
+            i += 1
+            end_day = int(args[i])
+        elif arg == '--append':
+            append_mode = True
+        elif not arg.startswith('--') and not excel_path:
+            excel_path = arg
+        elif not arg.startswith('--'):
+            output_path = arg
+        i += 1
 
-    print(f"✅ 已生成 {output_path}")
-    print(f"   共 {len(data)} 周数据，{len(data[0]['participants'])} 名参赛者")
+    if not excel_path:
+        print("用法: python convert.py <excel_path> [--week N] [--start-day N] [--end-day N] [--append] [output_path]")
+        sys.exit(1)
+
+    name_mapping = load_name_mapping()
+    week_data = build_week_data(excel_path, week_num, start_day, end_day, name_mapping)
+
+    if append_mode:
+        append_to_history(week_data, output_path)
+    else:
+        os.makedirs(os.path.dirname(output_path) or '.', exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump([week_data], f, ensure_ascii=False, indent=2)
+        print(f"✅ 已生成 {output_path}")
+        print(f"   日期: {week_data['dateRange']}")
+        print(f"   共 {len(week_data['participants'])} 名参赛者")
 
 
 if __name__ == '__main__':

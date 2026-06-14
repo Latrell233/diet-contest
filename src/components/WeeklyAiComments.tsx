@@ -14,6 +14,31 @@ const TAG_COLORS = [
   'bg-pink-500/15 text-pink-400 border-pink-500/25',
 ]
 
+function MacroReview({ content, week }: { content: string; week: number }) {
+  return (
+    <div className="relative bg-gradient-to-br from-[#111118] to-[#141420] rounded-2xl border border-neon-green/15 p-6 md:p-8 max-w-[720px] mx-auto overflow-hidden">
+      {/* 顶部绿金渐变装饰线 */}
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-neon-green via-neon-gold to-neon-green" />
+      {/* 背景光晕 */}
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-neon-green/3 rounded-full blur-3xl" />
+
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-2xl">📊</span>
+        <div>
+          <h3 className="text-neon-green font-black text-base tracking-tight">
+            大盘宏观战报
+          </h3>
+          <p className="text-[10px] text-gray-600 font-mono">第 {week} 周 · 全员减脂总评</p>
+        </div>
+      </div>
+
+      <div className="text-[#c8c8c8] text-[14px] leading-relaxed whitespace-pre-line">
+        {content}
+      </div>
+    </div>
+  )
+}
+
 function CommentCard({
   comment,
   nickname,
@@ -23,6 +48,8 @@ function CommentCard({
   nickname: string
   avatar: string
 }) {
+  const isNewFormat = !!(comment.coachGuide || comment.sassQuote)
+
   return (
     <div
       className="relative bg-[#111118] rounded-2xl border border-[#1e1e2a] p-6 md:p-8
@@ -87,8 +114,43 @@ function CommentCard({
 
       <div className="border-t border-[#1e1e2a] mb-5" />
 
-      {/* Next Week Flag */}
-      {comment.nextWeekFlag && (
+      {/* 🏋️‍♂️ 专业私教避坑指南（第2周+） */}
+      {comment.coachGuide && (
+        <div className="bg-[#0d1b0d] rounded-xl p-4 mb-4 border border-neon-green/10">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🏋️‍♂️</span>
+            <span className="text-[11px] text-neon-green/70 font-semibold tracking-wide uppercase">
+              专业私教避坑指南
+            </span>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            {comment.coachGuide}
+          </p>
+        </div>
+      )}
+
+      {/* 🗣️ 本周高能骚话（第2周+） */}
+      {comment.sassQuote && (
+        <div className="bg-[#1a1a0a] rounded-xl p-4 mb-4 border border-neon-gold/10">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🗣️</span>
+            <span className="text-[11px] text-neon-gold/70 font-semibold tracking-wide uppercase">
+              本周高能骚话
+            </span>
+          </div>
+          <blockquote className="text-gray-400 text-sm italic leading-relaxed border-l-2 border-neon-gold/25 pl-3 mb-2">
+            "{comment.sassQuote}"
+          </blockquote>
+          {comment.sassReply && (
+            <p className="text-neon-gold/80 text-xs font-semibold mt-2">
+              ⚡ {comment.sassReply}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* [第1周兼容] Next Week Flag */}
+      {!isNewFormat && comment.nextWeekFlag && (
         <div className="bg-[#1a1a1a] rounded-xl p-4 flex items-start gap-3 mb-4 border border-[#2a2a2a]">
           <div
             className="w-[18px] h-[18px] border-2 border-gray-600 rounded flex-shrink-0 mt-0.5
@@ -105,8 +167,8 @@ function CommentCard({
         </div>
       )}
 
-      {/* Prediction */}
-      {comment.prediction && (
+      {/* [第1周兼容] Prediction */}
+      {!isNewFormat && comment.prediction && (
         <div className="flex items-center gap-2 px-1">
           <span className="text-lg">🔮</span>
           <span className="text-xs text-gray-600 italic">{comment.prediction}</span>
@@ -131,6 +193,11 @@ export default function WeeklyAiComments({
         💬 AI 锐评茶话会
       </h2>
       <div className="flex flex-col gap-6">
+        {/* 大盘宏观战报（第2周+） */}
+        {weekData.macroReview && (
+          <MacroReview content={weekData.macroReview} week={weekData.week} />
+        )}
+
         {orderedParticipants.map(wp => {
           if (!wp) return null
           const profile = participantMap.get(wp.uid)!
