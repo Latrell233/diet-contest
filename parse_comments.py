@@ -39,13 +39,15 @@ def replace_real_names(text):
 def normalize_markdown(content):
     """
     规范化 markdown，处理不统一的换行格式。
-    将 `*\\n**field**：` 和 `* \\n**field**：` 转为 `* **field**：`，方便正则提取。
+    1. 统一 bullet 符号：`- **` 和 `* **` 都转为 `* **`
+    2. 将 `*\\n**field**：` 转为 `* **field**：`
     """
     # 去掉行尾空格
     content = re.sub(r'[ \t]+$', '', content, flags=re.MULTILINE)
+    # 统一 dash bullet → asterisk bullet: "- **field**：" → "* **field**："
+    content = re.sub(r'^- \*\*', r'* **', content, flags=re.MULTILINE)
     # 合并分隔的 bullet: "*\n**field**：" 或 "* \n**field**：" → "* **field**："
     content = re.sub(r'\* ?\n\*\*', r'* **', content)
-    # 处理粗体标记后的换行: "**field**：\nvalue" → "**field**：value"（合并行）
     # 清理多余空行（3+ 空行 → 2 空行）
     content = re.sub(r'\n{4,}', '\n\n\n', content)
     return content
@@ -67,25 +69,36 @@ def parse_markdown(md_path):
 
     # 提取宏观战报（第2周+）
     macro_review = ""
+    # 策略1：从 ## 到第一个 --- 之间
     macro_match = re.search(
-        r'## 📊 【大盘宏观战报[：:](.+?)\n\n---',
+        r'## 📊 【大盘宏观战报[：:].+?\n\n---',
         content, re.DOTALL
     )
     if not macro_match:
-        # 更简单的匹配：从 ## 到第一个 --- 之间
         macro_match = re.search(
-            r'## 📊 【大盘宏观战报[：:](.+?)\n---',
+            r'## 📊 【大盘宏观战报[：:].+?\n---',
+            content, re.DOTALL
+        )
+    # 策略2：无 --- 分隔符时，到第一个 ### 标题之前
+    if not macro_match:
+        macro_match = re.search(
+            r'## 📊 【大盘宏观战报[：:](.+?)(?=\n### 👑 )',
             content, re.DOTALL
         )
     if macro_match:
-        # 把标题行后的正文提取出来
         body = macro_match.group(1).strip()
-        # 去掉可能残留的标题行
         body = re.sub(r'^[^\n]*\n', '', body).strip()
         macro_review = replace_real_names(body)
 
-    # 按 --- 分割卡片
-    blocks = re.split(r'\n---\n', content)
+    # 按 --- 或 ### 👑 分割卡片
+    if '\n---\n' in content:
+        blocks = re.split(r'\n---\n', content)
+    else:
+        # 无 --- 分隔符时，按 ### 👑 标题分割
+        blocks = re.split(r'\n(?=### 👑 )', content)
+        # 第一个 block 是宏观战报，跳过
+        if blocks and '宏观战报' in blocks[0]:
+            blocks = blocks[1:]
     comments = []
 
     for block in blocks:
