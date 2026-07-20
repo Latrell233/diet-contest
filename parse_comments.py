@@ -69,14 +69,14 @@ def parse_markdown(md_path):
 
     # 提取宏观战报（第2周+）
     macro_review = ""
-    # 策略1：从 ## 到第一个 --- 之间
+    # 策略1：从 ## 到第一个 --- 之间（有 capture group）
     macro_match = re.search(
-        r'## 📊 【大盘宏观战报[：:].+?\n\n---',
+        r'## 📊 【大盘宏观战报[：:](.+?)\n\n---',
         content, re.DOTALL
     )
     if not macro_match:
         macro_match = re.search(
-            r'## 📊 【大盘宏观战报[：:].+?\n---',
+            r'## 📊 【大盘宏观战报[：:](.+?)\n---',
             content, re.DOTALL
         )
     # 策略2：无 --- 分隔符时，到第一个 ### 标题之前
