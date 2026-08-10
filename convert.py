@@ -223,6 +223,8 @@ def append_to_history(week_data, history_path):
     existing_weeks = {w['week'] for w in history}
     if week_data['week'] in existing_weeks:
         print(f"  ⚠️  第 {week_data['week']} 周已存在，覆盖旧数据")
+        # 删掉旧的，避免重复
+        history = [w for w in history if w['week'] != week_data['week']]
 
     history.append(week_data)
     # 按周号排序
